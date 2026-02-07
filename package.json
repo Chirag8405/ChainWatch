@@ -1,0 +1,34 @@
+{
+  "name": "chainwatch",
+  "version": "1.0.0",
+  "description": "Real-time ERC20 Transfer event indexer with Telegram notifications",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "ui": "cd ui && npm run dev",
+    "install:all": "npm install && cd ui && npm install",
+    "demo": "concurrently \"npm start\" \"npm run ui\""
+  },
+  "keywords": [
+    "ethereum",
+    "erc20",
+    "blockchain",
+    "indexer",
+    "telegram"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^3.5.3",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.9.0",
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.64.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

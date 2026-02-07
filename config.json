@@ -1,0 +1,15 @@
+{
+  "tokenContract": "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+  "trackingMode": "all",
+  "thresholdAmount": 0,
+  "watchedWallets": [
+    {
+      "address": "0x9fa5a4c3386e333e520883b1649a0bca99bdfd3d",
+      "label": "My Wallet",
+      "enabled": true
+    }
+  ],
+  "cooldownSeconds": 0,
+  "telegramChatId": "1803015821",
+  "confirmationDepth": 0
+}

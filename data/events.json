@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "savedAt": 1770266377682,
+  "count": 2,
+  "events": [
+    {
+      "type": "eth",
+      "from": "0x9fA5A4c3386e333e520883b1649A0bca99BDfd3d",
+      "to": "0x9fA5A4c3386e333e520883b1649A0bca99BDfd3d",
+      "amount": "0.001",
+      "rawAmount": "1000000000000000",
+      "blockNumber": 10194229,
+      "transactionHash": "0xe553d58d7c388d3d00091ee20833fdcf84d91e5fde68c488f5ee412d3e138967",
+      "tokenSymbol": "ETH",
+      "tokenName": "Ethereum",
+      "timestamp": 1770266376681,
+      "filterResult": {
+        "passed": true,
+        "showInUI": true,
+        "reason": "matched",
+        "message": "Event matched all filter criteria"
+      },
+      "processedAt": 1770266376682,
+      "storedAt": 1770266376682
+    },
+    {
+      "type": "eth",
+      "from": "0x9fA5A4c3386e333e520883b1649A0bca99BDfd3d",
+      "to": "0x9fA5A4c3386e333e520883b1649A0bca99BDfd3d",
+      "amount": "0.0001",
+      "rawAmount": "100000000000000",
+      "blockNumber": 10170104,
+      "transactionHash": "0x131ad65983935e392a8ae1523251e174e14ede7def8bb6976624b6c203270c9c",
+      "tokenSymbol": "ETH",
+      "tokenName": "Ethereum",
+      "timestamp": 1769961780713,
+      "filterResult": {
+        "passed": true,
+        "showInUI": true,
+        "reason": "matched",
+        "message": "Event matched all filter criteria"
+      },
+      "processedAt": 1769961780714,
+      "storedAt": 1769961780714
+    }
+  ]
+}
