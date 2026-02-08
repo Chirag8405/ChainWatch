@@ -1,78 +1,55 @@
 import { useState, useEffect, useRef } from 'react'
+import { Activity, Wallet, X, Plus, ChevronDown, ChevronUp } from 'lucide-react'
+import Portfolio from './Portfolio'
+import WalletConnect from './components/WalletConnect'
+import TransactionExecutor from './components/TransactionExecutor'
+import ContractVerifier from './components/ContractVerifier'
+import AlertRulesManager from './components/AlertRulesManager'
+import HistoricalAnalytics from './components/HistoricalAnalytics'
+import Sidebar from './components/Sidebar'
+import WelcomePage from './components/WelcomePage'
+import DashboardPage from './components/DashboardPage'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
+import { Badge } from './components/ui/badge'
+import { Button } from './components/ui/button'
 
-// WebSocket URL - use relative path for production, full URL for development
-const WS_URL = import.meta.env.DEV 
-  ? 'ws://localhost:3001/ws' 
+const WS_URL = import.meta.env.DEV
+  ? 'ws://localhost:3002/ws'
   : `ws://${window.location.host}/ws`
 
-const API_URL = import.meta.env.DEV ? 'http://localhost:3001' : ''
-
-// Token logos/icons
-const TokenLogo = ({ type, size = 24 }) => {
-  if (type === 'eth') {
-    return (
-      <svg width={size} height={size} viewBox="0 0 32 32" style={{ verticalAlign: 'middle' }}>
-        <g fill="none" fillRule="evenodd">
-          <circle cx="16" cy="16" r="16" fill="#627EEA"/>
-          <g fill="#FFF" fillRule="nonzero">
-            <path fillOpacity=".602" d="M16.498 4v8.87l7.497 3.35z"/>
-            <path d="M16.498 4L9 16.22l7.498-3.35z"/>
-            <path fillOpacity=".602" d="M16.498 21.968v6.027L24 17.616z"/>
-            <path d="M16.498 27.995v-6.028L9 17.616z"/>
-            <path fillOpacity=".2" d="M16.498 20.573l7.497-4.353-7.497-3.348z"/>
-            <path fillOpacity=".602" d="M9 16.22l7.498 4.353v-7.701z"/>
-          </g>
-        </g>
-      </svg>
-    )
-  }
-  // LINK logo
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" style={{ verticalAlign: 'middle' }}>
-      <g fill="none">
-        <circle cx="16" cy="16" r="16" fill="#2A5ADA"/>
-        <path d="M16 6l-1.799 1.055L9 10.556l-1.799 1.055v8.778L9 21.444l5.201 3.5L16 26l1.799-1.056 5.201-3.5 1.799-1.055v-8.778L23 10.556l-5.201-3.5L16 6zm-3.6 14.389l-1.799-1.056v-6.666l1.799-1.056L16 8.778v4.944l-3.6 2.167v4.5zm7.2 0L16 23.222v-4.944l3.6-2.167v-4.5l1.799 1.056 1.799 1.056v6.666l-1.799 1.056L19.6 20.389z" fill="#FFF"/>
-      </g>
-    </svg>
-  )
-}
+const API_URL = import.meta.env.DEV ? 'http://localhost:3002' : ''
 
 function App() {
-  // State
-  const [connected, setConnected] = useState(false)
-  const [connectionStatus, setConnectionStatus] = useState('connecting')
-  const [events, setEvents] = useState([])
-  const [config, setConfig] = useState({
-    threshold: 0,
-    watchedWallets: [],
-    watchedWalletsCount: 0,
-    cooldown: 0,
-    tokenContract: '',
-    trackingMode: 'all'
-  })
-  const [lastAlert, setLastAlert] = useState(null)
-  const [viewFilter, setViewFilter] = useState('all') // 'all', 'eth', 'token', or wallet address
-  const [showWalletManager, setShowWalletManager] = useState(false)
+  // Connection state
+  const [isConnected, setIsConnected] = useState(false)
+  const [reconnectAttempt, setReconnectAttempt] = useState(0)
+
+  // Wallet state
+  const [connectedWallet, setConnectedWallet] = useState(null)
+  const [connectedChainId, setConnectedChainId] = useState(null)
+  const [watchedWallets, setWatchedWallets] = useState([])
   const [newWalletAddress, setNewWalletAddress] = useState('')
-  const [newWalletLabel, setNewWalletLabel] = useState('')
-  const [walletError, setWalletError] = useState('')
-  const [addingWallet, setAddingWallet] = useState(false)
+  const [showWatchForm, setShowWatchForm] = useState(false)
+
+  // Events state
+  const [events, setEvents] = useState([])
+  const [filter, setFilter] = useState('all')
+
+  // UI state
+  const [currentPage, setCurrentPage] = useState('dashboard')
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
   const wsRef = useRef(null)
   const reconnectTimeoutRef = useRef(null)
 
-  // Connect to WebSocket
+  // WebSocket Connection
   useEffect(() => {
     connectWebSocket()
-    fetchStatus()
     fetchWallets()
 
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close()
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-      }
+      if (wsRef.current) wsRef.current.close()
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
     }
   }, [])
 
@@ -83,183 +60,97 @@ function App() {
 
       ws.onopen = () => {
         console.log('WebSocket connected')
-        setConnected(true)
-        setConnectionStatus('connected')
+        setIsConnected(true)
+        setReconnectAttempt(0)
       }
 
-      ws.onclose = () => {
-        console.log('WebSocket disconnected')
-        setConnected(false)
-        setConnectionStatus('disconnected')
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          console.log('Reconnecting...')
-          setConnectionStatus('connecting')
-          connectWebSocket()
-        }, 3000)
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+
+          if (data.type === 'event') {
+            setEvents(prev => [data.event, ...prev])
+          } else if (data.type === 'config_update' && data.config) {
+            setWatchedWallets(data.config.watchedWallets || [])
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error)
+        }
       }
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error)
       }
 
-      ws.onmessage = (event) => {
-        try {
-          const message = JSON.parse(event.data)
-          handleMessage(message)
-        } catch (e) {
-          console.error('Failed to parse message:', e)
-        }
+      ws.onclose = () => {
+        console.log('WebSocket disconnected')
+        setIsConnected(false)
+
+        // Attempt to reconnect
+        reconnectTimeoutRef.current = setTimeout(() => {
+          setReconnectAttempt(prev => prev + 1)
+          connectWebSocket()
+        }, 5000)
       }
     } catch (error) {
-      console.error('Failed to connect:', error)
-      setConnectionStatus('disconnected')
-    }
-  }
-
-  const handleMessage = (message) => {
-    switch (message.type) {
-      case 'welcome':
-        console.log('Welcome message received', message.config)
-        if (message.config) {
-          setConfig(prev => ({
-            ...prev,
-            watchedWallets: message.config.watchedWallets || [],
-            trackingMode: message.config.trackingMode || 'all',
-            threshold: message.config.thresholdAmount || 0,
-            cooldown: message.config.cooldownSeconds || 0,
-            tokenContract: message.config.tokenContract || ''
-          }))
-        }
-        break
-        
-      case 'transfer':
-        setEvents(prev => {
-          const newEvents = [{
-            ...message.data.event,
-            filterResult: message.data.filterResult,
-            timestamp: message.timestamp
-          }, ...prev]
-          return newEvents.slice(0, 50)
-        })
-        break
-        
-      case 'connection':
-        setConnectionStatus(message.data.status)
-        break
-        
-      case 'configChange':
-        setConfig(prev => ({
-          ...prev,
-          threshold: message.data.newConfig.thresholdAmount,
-          watchedWallets: message.data.newConfig.watchedWallets || [],
-          watchedWalletsCount: message.data.newConfig.watchedWalletsCount,
-          cooldown: message.data.newConfig.cooldownSeconds,
-          tokenContract: message.data.newConfig.tokenContract,
-          trackingMode: message.data.newConfig.trackingMode || 'all'
-        }))
-        fetchWallets() // Refresh wallets on config change
-        break
-        
-      case 'alertSent':
-        setLastAlert({
-          transactionHash: message.data.transactionHash,
-          amount: message.data.amount,
-          timestamp: message.data.timestamp
-        })
-        break
-        
-      default:
-        console.log('Unknown message type:', message.type)
-    }
-  }
-
-  const fetchStatus = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/config`)
-      if (response.ok) {
-        const data = await response.json()
-        setConfig({
-          threshold: data.thresholdAmount,
-          watchedWallets: data.watchedWallets || [],
-          watchedWalletsCount: data.watchedWalletsCount,
-          cooldown: data.cooldownSeconds,
-          tokenContract: data.tokenContract,
-          trackingMode: data.trackingMode || 'all'
-        })
-      }
-    } catch (error) {
-      console.error('Failed to fetch status:', error)
+      console.error('Failed to create WebSocket:', error)
     }
   }
 
   const fetchWallets = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/wallets`)
-      if (response.ok) {
-        const data = await response.json()
-        setConfig(prev => ({
-          ...prev,
-          watchedWallets: data.wallets || [],
-          watchedWalletsCount: data.count
-        }))
-      }
+      const response = await fetch(`${API_URL}/api/config`)
+      const data = await response.json()
+      setWatchedWallets(data.watchedWallets || [])
     } catch (error) {
       console.error('Failed to fetch wallets:', error)
     }
   }
 
-  const addWallet = async () => {
-    setWalletError('')
-    
-    if (!newWalletAddress) {
-      setWalletError('Please enter a wallet address')
-      return
+  const handleWalletChange = (account, chainId) => {
+    setConnectedWallet(account)
+    setConnectedChainId(chainId)
+    if (account) {
+      setCurrentPage('dashboard')
+    } else {
+      // Reset to welcome page when wallet is disconnected
+      setCurrentPage('dashboard')
     }
-    
+  }
+
+  const addWallet = async () => {
+    if (!newWalletAddress) return
+
     if (!/^0x[a-fA-F0-9]{40}$/.test(newWalletAddress)) {
-      setWalletError('Invalid Ethereum address format')
+      alert('Invalid Ethereum address format')
       return
     }
 
-    setAddingWallet(true)
-    
     try {
       const response = await fetch(`${API_URL}/api/wallets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          address: newWalletAddress, 
-          label: newWalletLabel || undefined 
-        })
+        body: JSON.stringify({ address: newWalletAddress })
       })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        setWalletError(data.error || 'Failed to add wallet')
-        return
+
+      if (response.ok) {
+        setNewWalletAddress('')
+        setShowWatchForm(false)
+        await fetchWallets()
       }
-      
-      // Success - clear form and refresh
-      setNewWalletAddress('')
-      setNewWalletLabel('')
-      await fetchWallets()
     } catch (error) {
-      setWalletError('Network error. Please try again.')
-    } finally {
-      setAddingWallet(false)
+      console.error('Failed to add wallet:', error)
     }
   }
 
   const removeWallet = async (address) => {
     if (!confirm('Remove this wallet from watchlist?')) return
-    
+
     try {
-      const response = await fetch(`${API_URL}/api/wallets/${address}`, {
+      const response = await fetch(`${API_URL}/api/wallets/${encodeURIComponent(address)}`, {
         method: 'DELETE'
       })
-      
+
       if (response.ok) {
         await fetchWallets()
       }
@@ -268,324 +159,334 @@ function App() {
     }
   }
 
-  const toggleWallet = async (address, currentEnabled) => {
-    try {
-      await fetch(`${API_URL}/api/wallets/${address}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled: !currentEnabled })
-      })
-      await fetchWallets()
-    } catch (error) {
-      console.error('Failed to toggle wallet:', error)
-    }
-  }
-
-  const formatAddress = (address) => {
-    if (!address) return ''
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
-
-  const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString()
-  }
-
-  // Get wallet address from wallet object (handles both string and object formats)
-  const getWalletAddress = (wallet) => {
-    return typeof wallet === 'string' ? wallet : wallet.address
-  }
-
-  // Check if event involves a specific wallet
-  const isWalletEvent = (event, walletAddress) => {
-    const addr = walletAddress.toLowerCase()
-    return event.from?.toLowerCase() === addr || event.to?.toLowerCase() === addr
-  }
-
-  // Check if event involves any watched wallet
-  const isWatchedWalletEvent = (event) => {
-    if (!config.watchedWallets || config.watchedWallets.length === 0) return false
-    return config.watchedWallets.some(w => {
-      const addr = getWalletAddress(w).toLowerCase()
-      return event.from?.toLowerCase() === addr || event.to?.toLowerCase() === addr
-    })
-  }
-
-  // Filter events based on view filter
+  // Filter events
   const filteredEvents = events.filter(event => {
-    if (viewFilter === 'all') return true
-    if (viewFilter === 'eth') return event.type === 'eth'
-    if (viewFilter === 'token') return event.type === 'token'
-    // Filter by specific wallet address
-    if (viewFilter.startsWith('0x')) {
-      return isWalletEvent(event, viewFilter)
-    }
-    return true
+    if (filter === 'all') return true
+    return event.direction === filter
   })
 
-  // Count events by type
-  const ethCount = events.filter(e => e.type === 'eth').length
-  const tokenCount = events.filter(e => e.type === 'token').length
+  const sortedEvents = [...filteredEvents].sort((a, b) => {
+    return new Date(b.timestamp) - new Date(a.timestamp)
+  })
 
   return (
-    <div className="app">
-      {/* Header */}
-      <header className="header">
-        <h1>ChainWatch</h1>
-        <p>Real-time ETH & Token Transfer Monitor • Sepolia Testnet</p>
-      </header>
+    <div className="min-h-screen bg-zinc-950 text-white">
+      {/* Show Welcome Page if no wallet connected */}
+      {!connectedWallet ? (
+        <WelcomePage onWalletConnect={handleWalletChange} />
+      ) : (
+        <>
+          {/* Sidebar */}
+          <Sidebar
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            connectedWallet={connectedWallet}
+          />
 
-      {/* Section A: Connection Status */}
-      <section className="status-section">
-        <div className="section-header">Connection Status</div>
-        <div className="status-row">
-          <div className={`status-indicator ${connectionStatus}`}></div>
-          <div className="status-text">
-            {connectionStatus === 'connected' && (
-              <><strong>Connected</strong> — Listening to Sepolia Transfers</>
-            )}
-            {connectionStatus === 'disconnected' && (
-              <><strong>Disconnected</strong> — Attempting to reconnect...</>
-            )}
-            {connectionStatus === 'connecting' && (
-              <><strong>Connecting</strong> — Establishing connection...</>
-            )}
-            {connectionStatus === 'error' && (
-              <><strong>Error</strong> — Connection failed</>
-            )}
-          </div>
-        </div>
-        <div style={{ marginTop: '10px', fontSize: '12px', color: '#8b949e', display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-            Mode: <strong style={{ color: '#58a6ff' }}>{config.trackingMode?.toUpperCase()}</strong>
-          </span>
-          {config.tokenContract && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <TokenLogo type="token" size={16} />
-              <code style={{ color: '#58a6ff' }}>{formatAddress(config.tokenContract)}</code>
-            </span>
-          )}
-        </div>
-      </section>
-
-      {/* Wallet Manager Section */}
-      <section className="wallet-section">
-        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>Watched Wallets ({config.watchedWallets?.length || 0})</span>
-          <button 
-            className="toggle-btn"
-            onClick={() => setShowWalletManager(!showWalletManager)}
-          >
-            {showWalletManager ? '▲ Hide' : '▼ Manage'}
-          </button>
-        </div>
-        
-        {showWalletManager && (
-          <div className="wallet-manager">
-            {/* Add Wallet Form */}
-            <div className="add-wallet-form">
-              <input
-                type="text"
-                placeholder="0x... wallet address"
-                value={newWalletAddress}
-                onChange={(e) => setNewWalletAddress(e.target.value)}
-                className="wallet-input"
-              />
-              <input
-                type="text"
-                placeholder="Label (optional)"
-                value={newWalletLabel}
-                onChange={(e) => setNewWalletLabel(e.target.value)}
-                className="wallet-input label-input"
-              />
-              <button 
-                onClick={addWallet} 
-                disabled={addingWallet}
-                className="add-wallet-btn"
-              >
-                {addingWallet ? '...' : '+ Add'}
-              </button>
-            </div>
-            {walletError && <div className="wallet-error">{walletError}</div>}
-            
-            {/* Wallet List */}
-            <div className="wallet-list">
-              {config.watchedWallets?.length === 0 ? (
-                <div className="no-wallets">No wallets being watched</div>
-              ) : (
-                config.watchedWallets.map((wallet, index) => {
-                  const addr = getWalletAddress(wallet)
-                  const label = typeof wallet === 'object' ? wallet.label : `Wallet ${index + 1}`
-                  const enabled = typeof wallet === 'object' ? wallet.enabled !== false : true
-                  const eventCount = events.filter(e => isWalletEvent(e, addr)).length
-                  
-                  return (
-                    <div key={addr} className={`wallet-item ${enabled ? '' : 'disabled'}`}>
-                      <div className="wallet-info">
-                        <div className="wallet-label">{label}</div>
-                        <div className="wallet-address">
-                          <code>{formatAddress(addr)}</code>
-                          <span className="event-count">{eventCount} events</span>
-                        </div>
-                      </div>
-                      <div className="wallet-actions">
-                        <button 
-                          className={`filter-btn ${viewFilter === addr ? 'active' : ''}`}
-                          onClick={() => setViewFilter(viewFilter === addr ? 'all' : addr)}
-                          title="Filter events by this wallet"
-                        >
-                          🔍
-                        </button>
-                        <button 
-                          className={`toggle-wallet-btn ${enabled ? 'enabled' : 'disabled'}`}
-                          onClick={() => toggleWallet(addr, enabled)}
-                          title={enabled ? 'Disable wallet' : 'Enable wallet'}
-                        >
-                          {enabled ? '✓' : '○'}
-                        </button>
-                        <button 
-                          className="remove-btn"
-                          onClick={() => removeWallet(addr)}
-                          title="Remove wallet"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Section C: Filter Display */}
-      <section className="filter-section">
-        <div className="section-header">Active Filters</div>
-        <div className="filter-grid">
-          <div className="filter-item">
-            <div className="value">{config.threshold}</div>
-            <div className="label">Min Threshold</div>
-          </div>
-          <div className="filter-item">
-            <div className="value">{config.watchedWalletsCount || config.watchedWallets?.length || 0}</div>
-            <div className="label">Watched Wallets</div>
-          </div>
-          <div className="filter-item">
-            <div className="value">{config.cooldown}s</div>
-            <div className="label">Cooldown</div>
-          </div>
-          <div className="filter-item">
-            <div className="value">{events.length}</div>
-            <div className="label">Events Received</div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section B: Live Event Feed */}
-      <section className="event-feed">
-        <div className="event-feed-header">
-          <div className="section-header" style={{ margin: 0 }}>Live Event Feed</div>
-          <div className="filter-tabs">
-            <button 
-              className={`filter-tab ${viewFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setViewFilter('all')}
-            >
-              All ({events.length})
-            </button>
-            <button 
-              className={`filter-tab eth ${viewFilter === 'eth' ? 'active' : ''}`}
-              onClick={() => setViewFilter('eth')}
-            >
-              <TokenLogo type="eth" size={14} /> ETH ({ethCount})
-            </button>
-            <button 
-              className={`filter-tab token ${viewFilter === 'token' ? 'active' : ''}`}
-              onClick={() => setViewFilter('token')}
-            >
-              <TokenLogo type="token" size={14} /> LINK ({tokenCount})
-            </button>
-          </div>
-        </div>
-        <div className="event-list">
-          {filteredEvents.length === 0 ? (
-            <div className="no-events">
-              <div style={{ fontSize: '24px', marginBottom: '10px' }}></div>
-              <div>Waiting for Transfer events...</div>
-              <div style={{ fontSize: '12px', marginTop: '5px' }}>
-                {viewFilter !== 'all' ? `No ${viewFilter === 'eth' ? 'ETH' : viewFilter === 'token' ? 'Token' : 'wallet'} events yet` : 'No transactions for your watched wallet yet'}
-              </div>
-            </div>
-          ) : (
-            filteredEvents.map((event, index) => {
-              const isMyWallet = isWatchedWalletEvent(event)
-              return (
-                <div 
-                  key={event.transactionHash + index} 
-                  className={`event-item ${event.filterResult?.passed ? 'matched' : 'ignored'} ${event.type || 'token'} ${isMyWallet ? 'my-wallet' : ''}`}
-                >
-                  <div className="event-row">
-                    <span className="event-amount">
-                      <span className="event-type-badge">
-                        <TokenLogo type={event.type === 'eth' ? 'eth' : 'token'} size={18} />
-                      </span>
-                      {isMyWallet && <span className="wallet-badge"></span>}
-                      {parseFloat(event.amount).toFixed(4)} {event.tokenSymbol || 'TOKEN'}
-                    </span>
-                    <span className={`event-status ${event.filterResult?.passed ? 'matched' : 'ignored'}`}>
-                      {event.filterResult?.passed ? '✓ Alert Sent' : `⏭ ${event.filterResult?.reason || 'Ignored'}`}
-                    </span>
-                  </div>
-                  <div className="event-addresses">
-                    <span className={config.watchedWallets?.some(w => getWalletAddress(w).toLowerCase() === event.from?.toLowerCase()) ? 'my-address' : ''}>
-                      {formatAddress(event.from)}
-                    </span>
-                    {' → '}
-                    <span className={config.watchedWallets?.some(w => getWalletAddress(w).toLowerCase() === event.to?.toLowerCase()) ? 'my-address' : ''}>
-                      {formatAddress(event.to)}
-                    </span>
-                  </div>
-                  <div className="event-time">
-                    Block {event.blockNumber} • {formatTime(event.timestamp)}
-                  </div>
+          {/* Main Content */}
+          <div className="lg:pl-64">
+            {/* Top Header */}
+            <header className="sticky top-0 z-20 bg-zinc-900/95 backdrop-blur-sm border-b border-zinc-800 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-white">
+                    {currentPage === 'dashboard' && 'Dashboard'}
+                    {currentPage === 'transactions' && 'Send Transaction'}
+                    {currentPage === 'verify' && 'Verify Contract'}
+                    {currentPage === 'alerts' && 'Alert Rules'}
+                    {currentPage === 'analytics' && 'Analytics'}
+                  </h2>
+                  <p className="text-sm text-zinc-400">
+                    {isConnected ? 'Connected to Sepolia' : 'Disconnected'}
+                  </p>
                 </div>
-              )
-            })
-          )}
-        </div>
-      </section>
+                <div className="flex items-center gap-4">
+                  {/* Connection Status */}
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-sm text-zinc-400">
+                      {isConnected ? 'Live' : 'Offline'}
+                    </span>
+                  </div>
+                  <WalletConnect onWalletChange={handleWalletChange} />
+                </div>
+              </div>
+            </header>
 
-      {/* Section D: Last Alert Sent */}
-      <section className="alert-section">
-        <div className="section-header">Last Telegram Alert</div>
-        {lastAlert ? (
-          <div>
-            <div className="alert-success">
-              <span style={{ fontSize: '20px' }}>✅</span>
-              <span>Alert sent successfully</span>
-            </div>
-            <div className="alert-details">
-              Amount: <strong>{parseFloat(lastAlert.amount).toFixed(4)}</strong> • 
-              TX: <code>{formatAddress(lastAlert.transactionHash)}</code> • 
-              {formatTime(lastAlert.timestamp)}
-            </div>
-          </div>
-        ) : (
-          <div className="alert-none">
-            No alerts sent yet — waiting for matching events
-          </div>
-        )}
-      </section>
+            {/* Page Content */}
+            <main className="p-6">
+              {/* Dashboard Page */}
+              {currentPage === 'dashboard' && (
+                <>
+                  <DashboardPage
+                    connectedWallet={connectedWallet}
+                    watchedWallets={watchedWallets}
+                    events={sortedEvents}
+                    stats={{
+                      totalEvents: sortedEvents.length,
+                      incomingCount: sortedEvents.filter(e => e.direction === 'incoming').length,
+                      outgoingCount: sortedEvents.filter(e => e.direction === 'outgoing').length,
+                    }}
+                    setCurrentPage={setCurrentPage}
+                  />
 
-      {/* Footer */}
-      <footer className="footer">
-        <p>
-          ChainWatch v1.0 •{' '}
-          <a href="https://sepolia.etherscan.io" target="_blank" rel="noopener noreferrer">
-            Sepolia Etherscan
-          </a>
-        </p>
-      </footer>
+                  {/* Watched Wallets Manager */}
+                  <div className="mt-6">
+                    <Card className="bg-zinc-900 border-zinc-800">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-white">Watched Wallets</CardTitle>
+                            <CardDescription className="text-zinc-400">
+                              Monitor these addresses for activity
+                            </CardDescription>
+                          </div>
+                          <Button
+                            onClick={() => setShowWatchForm(!showWatchForm)}
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {showWatchForm ? <X className="h-4 w-4 mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+                            {showWatchForm ? 'Cancel' : 'Add Wallet'}
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {showWatchForm && (
+                          <div className="mb-4 p-4 rounded-lg bg-zinc-800 border border-zinc-700">
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="0x... wallet address"
+                                className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={newWalletAddress}
+                                onChange={(e) => setNewWalletAddress(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && addWallet()}
+                              />
+                              <Button onClick={addWallet} className="bg-blue-600 hover:bg-blue-700">
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {watchedWallets.length === 0 ? (
+                          <div className="text-center py-8 text-zinc-500">
+                            <Wallet className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p>No wallets being monitored</p>
+                            <p className="text-sm mt-1">Add wallet addresses to start tracking transactions</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {watchedWallets.map((wallet) => {
+                              const address = typeof wallet === 'string' ? wallet : wallet.address;
+                              const label = typeof wallet === 'object' ? wallet.label : null;
+                              return (
+                                <div
+                                  key={address}
+                                  className="flex items-center justify-between p-3 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+                                >
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <div className="h-8 w-8 rounded-full bg-blue-600/10 flex items-center justify-center shrink-0">
+                                      <Wallet className="h-4 w-4 text-blue-500" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      {label && <p className="text-xs text-zinc-500">{label}</p>}
+                                      <span className="font-mono text-sm text-white truncate block">{address}</span>
+                                    </div>
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeWallet(address)}
+                                    className="shrink-0 text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Live Events Feed */}
+                  <div className="mt-6">
+                    <Card className="bg-zinc-900 border-zinc-800">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-white flex items-center gap-2">
+                              <Activity className="h-5 w-5" />
+                              Live Transaction Feed
+                            </CardTitle>
+                            <CardDescription className="text-zinc-400">
+                              Real-time blockchain activity
+                            </CardDescription>
+                          </div>
+                          <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                            {sortedEvents.length} events
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        {/* Filters */}
+                        <div className="mb-4 flex flex-wrap gap-2">
+                          <Button
+                            size="sm"
+                            variant={filter === 'all' ? 'default' : 'outline'}
+                            onClick={() => setFilter('all')}
+                            className={filter === 'all' ? 'bg-blue-600 hover:bg-blue-700' : 'border-zinc-700 text-zinc-400'}
+                          >
+                            All
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={filter === 'incoming' ? 'default' : 'outline'}
+                            onClick={() => setFilter('incoming')}
+                            className={filter === 'incoming' ? 'bg-green-600 hover:bg-green-700' : 'border-zinc-700 text-zinc-400'}
+                          >
+                            Incoming
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={filter === 'outgoing' ? 'default' : 'outline'}
+                            onClick={() => setFilter('outgoing')}
+                            className={filter === 'outgoing' ? 'bg-orange-600 hover:bg-orange-700' : 'border-zinc-700 text-zinc-400'}
+                          >
+                            Outgoing
+                          </Button>
+                        </div>
+
+                        {/* Events List */}
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {sortedEvents.length === 0 ? (
+                            <div className="text-center py-8 text-zinc-500">
+                              <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                              <p>No transactions yet</p>
+                              <p className="text-sm mt-1">Start monitoring wallets to see live activity</p>
+                            </div>
+                          ) : (
+                            sortedEvents.map((event, index) => (
+                              <div
+                                key={event.hash || event.timestamp || index}
+                                className="flex items-start gap-3 p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors"
+                              >
+                                <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center ${event.direction === 'incoming' ? 'bg-green-500/10' : 'bg-orange-500/10'
+                                  }`}>
+                                  <div className={`h-2 w-2 rounded-full ${event.direction === 'incoming' ? 'bg-green-500' : 'bg-orange-500'
+                                    }`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Badge className={
+                                      event.direction === 'incoming'
+                                        ? 'bg-green-500/10 text-green-500 border-green-500/20'
+                                        : 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                                    }>
+                                      {event.direction}
+                                    </Badge>
+                                    <span className="text-xs text-zinc-500">{event.timestamp}</span>
+                                  </div>
+                                  <p className="text-sm font-mono text-white">{event.value} ETH</p>
+                                  <p className="text-xs text-zinc-400 truncate">
+                                    {event.direction === 'incoming' ? 'From' : 'To'}: {event.counterparty}
+                                  </p>
+                                </div>
+                                <a
+                                  href={`https://sepolia.etherscan.io/tx/${event.hash}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
+                                >
+                                  View →
+                                </a>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Portfolio Component */}
+                  <div className="mt-6">
+                    <Portfolio
+                      events={sortedEvents}
+                      watchedWallets={watchedWallets}
+                      connectedWallet={connectedWallet}
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Transactions Page */}
+              {currentPage === 'transactions' && (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">Send Transaction</CardTitle>
+                    <CardDescription className="text-zinc-400">
+                      Execute ETH or token transfers from your wallet
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TransactionExecutor connectedWallet={connectedWallet} chainId={connectedChainId} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Verify Page */}
+              {currentPage === 'verify' && (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">Verify Contract</CardTitle>
+                    <CardDescription className="text-zinc-400">
+                      Verify smart contracts on Etherscan
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ContractVerifier chainId={connectedChainId} />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Alerts Page */}
+              {currentPage === 'alerts' && (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">Alert Rules</CardTitle>
+                    <CardDescription className="text-zinc-400">
+                      Configure custom conditions for notifications
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <AlertRulesManager />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Analytics Page */}
+              {currentPage === 'analytics' && (
+                <Card className="bg-zinc-900 border-zinc-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">Historical Analytics</CardTitle>
+                    <CardDescription className="text-zinc-400">
+                      Search and export transaction history
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <HistoricalAnalytics />
+                  </CardContent>
+                </Card>
+              )}
+            </main>
+          </div>
+        </>
+      )}
     </div>
   )
 }
