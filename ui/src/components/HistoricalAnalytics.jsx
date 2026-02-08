@@ -149,7 +149,7 @@ const HistoricalAnalytics = () => {
                             <select
                                 value={filters.type}
                                 onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                                className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                             >
                                 <option value="">All Types</option>
                                 <option value="eth">ETH Transfers</option>

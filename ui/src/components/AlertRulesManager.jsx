@@ -199,7 +199,7 @@ const AlertRulesManager = () => {
                                 <select
                                     value={newRule.type}
                                     onChange={(e) => setNewRule({ ...newRule, type: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                     <option value="gas_price">Gas Price Alert</option>
                                     <option value="amount">Amount Threshold</option>
@@ -214,7 +214,7 @@ const AlertRulesManager = () => {
                                 <select
                                     value={newRule.operator}
                                     onChange={(e) => setNewRule({ ...newRule, operator: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                    className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                 >
                                     <option value=">">Greater than (&gt;)</option>
                                     <option value="<">Less than (&lt;)</option>

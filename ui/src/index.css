@@ -72,6 +72,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Fix native select/option styling for dark theme */
+select {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+select option {
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
