@@ -1,8 +1,113 @@
 {
   "version": 1,
-  "savedAt": 1770266377682,
-  "count": 2,
+  "savedAt": 1770476065136,
+  "count": 5,
   "events": [
+    {
+      "type": "eth",
+      "from": "0xd2e06BcB4e0E2cC978de6eb606B685B1F6EFC4d6",
+      "to": "0xd2e06BcB4e0E2cC978de6eb606B685B1F6EFC4d6",
+      "amount": "0.001",
+      "rawAmount": "1000000000000000",
+      "blockNumber": 10211185,
+      "transactionHash": "0x320f08c7aee7b6f866eeda275796576bce12d9ef8f2d80ca208509f3564f793b",
+      "tokenSymbol": "ETH",
+      "tokenName": "Ethereum",
+      "timestamp": 1770476063728,
+      "filterResult": {
+        "passed": true,
+        "showInUI": true,
+        "reason": "matched",
+        "message": "Event matched all filter criteria"
+      },
+      "category": {
+        "category": "eth_transfer",
+        "label": "ETH Transfer",
+        "description": "Native ETH transfer",
+        "color": "#627EEA",
+        "icon": "⚡",
+        "protocol": "Ethereum"
+      },
+      "priceInfo": {
+        "usdValue": 2.01621,
+        "price": 2016.21,
+        "change24h": 1.5810946949205384,
+        "currency": "USD",
+        "formatted": "$2.02"
+      },
+      "processedAt": 1770476064131,
+      "storedAt": 1770476064131
+    },
+    {
+      "type": "eth",
+      "from": "0xd2e06BcB4e0E2cC978de6eb606B685B1F6EFC4d6",
+      "to": "0xd2e06BcB4e0E2cC978de6eb606B685B1F6EFC4d6",
+      "amount": "0.001",
+      "rawAmount": "1000000000000000",
+      "blockNumber": 10210395,
+      "transactionHash": "0xeb6370076086e63dd43ae52da7fcdf7331f72581c179a527a83e4129d8dec30c",
+      "tokenSymbol": "ETH",
+      "tokenName": "Ethereum",
+      "timestamp": 1770466320545,
+      "filterResult": {
+        "passed": true,
+        "showInUI": true,
+        "reason": "matched",
+        "message": "Event matched all filter criteria"
+      },
+      "category": {
+        "category": "eth_transfer",
+        "label": "ETH Transfer",
+        "description": "Native ETH transfer",
+        "color": "#627EEA",
+        "icon": "⚡",
+        "protocol": "Ethereum"
+      },
+      "priceInfo": {
+        "usdValue": 2.0409100000000002,
+        "price": 2040.91,
+        "change24h": 6.174132707238951,
+        "currency": "USD",
+        "formatted": "$2.04"
+      },
+      "processedAt": 1770466321177,
+      "storedAt": 1770466321177
+    },
+    {
+      "type": "eth",
+      "from": "0xd2e06BcB4e0E2cC978de6eb606B685B1F6EFC4d6",
+      "to": "0xd2e06BcB4e0E2cC978de6eb606B685B1F6EFC4d6",
+      "amount": "0.001",
+      "rawAmount": "1000000000000000",
+      "blockNumber": 10209142,
+      "transactionHash": "0x5cc89822996b348c165e35c926f455cf576357568c3aca9928dae99c9400615c",
+      "tokenSymbol": "ETH",
+      "tokenName": "Ethereum",
+      "timestamp": 1770450840513,
+      "filterResult": {
+        "passed": true,
+        "showInUI": true,
+        "reason": "matched",
+        "message": "Event matched all filter criteria"
+      },
+      "category": {
+        "category": "eth_transfer",
+        "label": "ETH Transfer",
+        "description": "Native ETH transfer",
+        "color": "#627EEA",
+        "icon": "⚡",
+        "protocol": "Ethereum"
+      },
+      "priceInfo": {
+        "usdValue": 2.02772,
+        "price": 2027.72,
+        "change24h": 6.984509624665799,
+        "currency": "USD",
+        "formatted": "$2.03"
+      },
+      "processedAt": 1770450840899,
+      "storedAt": 1770450840899
+    },
     {
       "type": "eth",
       "from": "0x9fA5A4c3386e333e520883b1649A0bca99BDfd3d",

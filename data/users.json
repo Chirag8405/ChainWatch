@@ -1,0 +1,12 @@
+{
+    "testuser": {
+        "userId": "user_1770529345957_4ifd32fog",
+        "username": "testuser",
+        "password": "$2a$10$sKyJucAqfpYgjx0AcI5I2.KJznBBxuoTwl/zmOTl7cHxrI.tuY.3S",
+        "email": null,
+        "watchlists": [],
+        "alertRules": [],
+        "createdAt": "2026-02-08T05:42:25.957Z",
+        "lastLogin": "2026-02-08T05:42:39.136Z"
+    }
+}
