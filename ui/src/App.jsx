@@ -13,11 +13,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './com
 import { Badge } from './components/ui/badge'
 import { Button } from './components/ui/button'
 
-const WS_URL = import.meta.env.DEV
-  ? 'ws://localhost:3002/ws'
-  : `ws://${window.location.host}/ws`
-
-const API_URL = import.meta.env.DEV ? 'http://localhost:3002' : ''
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3002' : '')
+const WS_URL = API_URL.replace(/^http/, 'ws') + '/ws'
 
 function App() {
   // Connection state

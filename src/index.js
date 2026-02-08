@@ -9,6 +9,7 @@ import { createServer } from 'http';
 import { EventEmitter } from 'events';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
 
 // Import modules - Feature-based organization
 import BlockchainListener from './blockchain/listener.js';
@@ -217,12 +218,21 @@ Waiting for Transfer events...
     console.log('Auth routes registered under /auth');
 
     // Serve static UI (for production)
-    this.app.use(express.static(join(__dirname, '..', 'ui', 'dist')));
+    const uiDistPath = join(__dirname, '..', 'ui', 'dist');
+    const uiIndexPath = join(uiDistPath, 'index.html');
 
-    // Fallback to index.html for SPA routing
-    this.app.get('*', (req, res) => {
-      res.sendFile(join(__dirname, '..', 'ui', 'dist', 'index.html'));
-    });
+    if (existsSync(uiDistPath)) {
+      this.app.use(express.static(uiDistPath));
+
+      // Fallback to index.html for SPA routing
+      this.app.get('*', (req, res) => {
+        res.sendFile(uiIndexPath);
+      });
+      console.log('Serving UI from', uiDistPath);
+    } else {
+      console.warn('UI dist not found at', uiDistPath, '- skipping static file serving.');
+      console.warn('Run "npm run build" to build the UI.');
+    }
 
     this.server.listen(PORT, HOST, () => {
       console.log(`Server listening on http://${HOST}:${PORT}`);

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './com
 import { Badge } from './components/ui/badge'
 import { cn } from './lib/utils'
 
-const API_URL = import.meta.env.DEV ? 'http://localhost:3002' : ''
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3002' : '')
 
 function Portfolio({ walletAddress, config }) {
     const [portfolio, setPortfolio] = useState(null)

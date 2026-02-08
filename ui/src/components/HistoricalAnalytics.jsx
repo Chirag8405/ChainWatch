@@ -19,7 +19,7 @@ const HistoricalAnalytics = () => {
     const [searching, setSearching] = useState(false)
     const [exporting, setExporting] = useState(false)
 
-    const API_URL = import.meta.env.DEV ? 'http://localhost:3002' : ''
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3002' : '')
 
     const handleSearch = async () => {
         setSearching(true)

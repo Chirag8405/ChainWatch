@@ -11,7 +11,7 @@ const AuthModal = ({ onLogin, onClose }) => {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
-    const API_URL = import.meta.env.DEV ? 'http://localhost:3002' : ''
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:3002' : '')
 
     const handleSubmit = async (e) => {
         e.preventDefault()
