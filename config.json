@@ -7,9 +7,14 @@
       "address": "0x9fa5a4c3386e333e520883b1649a0bca99bdfd3d",
       "label": "My Wallet",
       "enabled": true
+    },
+    {
+      "address": "0xd2e06bcb4e0e2cc978de6eb606b685b1f6efc4d6",
+      "label": "Wallet 2",
+      "enabled": true
     }
   ],
   "cooldownSeconds": 0,
-  "telegramChatId": "1803015821",
+  "telegramChatId": "5065984527",
   "confirmationDepth": 0
 }
