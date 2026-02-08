@@ -4,52 +4,52 @@
   /* Sophisticated dark theme with rich color palette */
   --background: 220 18% 8%;
   --foreground: 210 15% 95%;
-  
+
   --card: 220 15% 12%;
   --card-foreground: 210 15% 95%;
-  
+
   --popover: 220 18% 10%;
   --popover-foreground: 210 15% 95%;
-  
+
   /* Primary: Modern blue */
   --primary: 217 91% 60%;
   --primary-foreground: 210 15% 98%;
-  
+
   /* Secondary: Muted slate */
   --secondary: 215 20% 20%;
   --secondary-foreground: 210 15% 90%;
-  
+
   /* Muted: Subtle backgrounds */
   --muted: 215 18% 16%;
   --muted-foreground: 215 12% 60%;
-  
+
   /* Accent: Highlighted items */
   --accent: 210 45% 25%;
   --accent-foreground: 210 15% 95%;
-  
+
   /* Success: Green */
   --success: 142 70% 45%;
   --success-foreground: 210 15% 98%;
-  
+
   /* Warning: Amber */
   --warning: 38 92% 50%;
   --warning-foreground: 220 18% 8%;
-  
+
   /* Destructive: Red */
   --destructive: 0 72% 51%;
   --destructive-foreground: 210 15% 98%;
-  
+
   /* Info: Cyan */
   --info: 199 89% 48%;
   --info-foreground: 210 15% 98%;
-  
+
   /* Border and inputs */
   --border: 215 18% 22%;
   --input: 215 18% 18%;
   --ring: 217 91% 60%;
-  
+
   --radius: 0.5rem;
-  
+
   /* Chart colors */
   --chart-1: 217 91% 60%;
   --chart-2: 142 70% 45%;
@@ -92,9 +92,12 @@ body {
 
 /* Animation utilities */
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
