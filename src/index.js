@@ -207,15 +207,11 @@ Waiting for Transfer events...
     };
 
     const apiRouter = createRoutes(context);
-    console.log('createRoutes returned:', apiRouter);
-    console.log('Router stack:', apiRouter.stack ? apiRouter.stack.length + ' routes' : 'NO STACK');
     this.app.use('/api', apiRouter);
-    console.log('API routes registered under /api');
 
     // Authentication routes
     const authRouter = createAuthRoutes();
     this.app.use('/auth', authRouter);
-    console.log('Auth routes registered under /auth');
 
     // Serve static UI (for production)
     const uiDistPath = join(__dirname, '..', 'ui', 'dist');
